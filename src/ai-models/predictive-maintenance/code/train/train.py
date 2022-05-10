@@ -25,7 +25,20 @@ from tensorflow.python.client import device_lib
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 
-from sapai import tracking
+from unittest.mock import MagicMock
+
+from ai_api_client_sdk.models.metric import Metric
+from ai_api_client_sdk.models.metric_custom_info import MetricCustomInfo
+from ai_api_client_sdk.models.metric_tag import MetricTag
+
+from ai_core_sdk.resource_clients.metrics_client import MetricsCoreClient
+rest_client_mock = MagicMock()
+tracking = MetricsCoreClient(rest_client_mock)
+
+from datetime import datetime
+dateTimeObj = datetime.now()
+timestampStr = dateTimeObj.strftime('%Y-%m-%dT%H:%M:%S.%f+00:00')
+
 FORMAT = "%(asctime)s:%(name)s:%(levelname)s - %(message)s"
 # Use filename="file.log" as a param to logging to log to a file
 logging.basicConfig(format=FORMAT, level=logging.INFO)
@@ -173,7 +186,7 @@ class TrainInterface:
             validation_data = ( np.array(self.X_validation, np.float32),
                                 np.array(self.y_validation, np.float32),
                                            ),        
-            epochs = 50 #To be changed
+            epochs = 5 #To be changed
         )
 
         self.loss = history.history['loss']
@@ -227,13 +240,14 @@ class TrainInterface:
         score = self.tf_model.evaluate(infer_data, infer_data_labels)
         #print("Accuracy: " + str(score[0]))
 
-        metric = [
-            {"name": "Model Accuracy",
+        metric =  {"name": "Model Accuracy",
             "value": float(score[1]),
-            "labels":[{"name": "dataset", "value": "test set"}]}
-            ]
+            "labels":[{"name": "dataset", "value": "test set"}],
+             "timestamp":timestampStr
+         }
+            
         #print(metric)
-        tracking.log_metrics(metric, artifact_name = "sound-metrics")
+        tracking.log_metrics(metrics = [Metric.from_dict(metric)], artifact_name = "sound-metrics")
 
         training_metrics = [
                     {'loss': str(self.loss)},
@@ -241,13 +255,11 @@ class TrainInterface:
                     {'accuracy': str(self.accuracy)},
                     {'val_accuracy': str(self.val_accuracy)}
                 ]
-        custom_info_1 = [{"name": "Metrics", 
-                          "value": str(training_metrics)}]
-        logstr=custom_info_1[0]['name']+custom_info_1[0]['value']
-        logging.info(logstr)
+        custom_info_1 = {"name": "Metrics", 
+                          "value": str(training_metrics)}
 
         #print(custom_info_1)
-        tracking.set_custom_info(custom_info_1)
+        tracking.set_custom_info([MetricCustomInfo.from_dict(custom_info_1)])
         logging.info(f"custom_info_1")
 
         #confusion matrix
@@ -257,17 +269,15 @@ class TrainInterface:
         pred_confidence = [ np.max(arr) for arr in np.array(pred)]
         
         cf_matrix = confusion_matrix(self.y_test, pred_class)
-        custom_info_2 = [{'name': "confusion_matrix", 
+        custom_info_2 = {'name': "confusion_matrix", 
                           "value": str({ 
                               'cf_matrix':  cf_matrix.tolist() ,\
                               'classes': [ k for k in self.classes.keys()]
                           })
-                         } ]
-        logstr=custom_info_2[0]['name']+custom_info_2[0]['value']
-        logging.info(logstr)
+                         } 
 
         #print(custom_info_2)
-        tracking.set_custom_info(custom_info_2)
+        tracking.set_custom_info([MetricCustomInfo.from_dict(custom_info_2)])
         logging.info(f"custom_info_2")
 
 
