@@ -1,0 +1,14 @@
+{
+    "repo": {
+        "name": "lgp_green_factory",
+        "url": "https://github.com/sap-btp-ai-sustainability-bootcamp/lgp_green_factory",
+        "username": "YOUR_USERNAME",
+        "password": "YOUR_PASSWORD"
+    },
+    "app": {
+        "applicationName": "defect_det_app_UXXXX",
+        "repositoryUrl": "https://github.com/sap-btp-ai-sustainability-bootcamp/lgp_green_factory",
+        "revision": "HEAD",
+        "path": "workflows_defect_det_UXXXX"
+    }
+}
